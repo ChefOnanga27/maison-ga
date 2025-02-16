@@ -54,7 +54,7 @@ export function Navigation() {
           <Link href="/" className="text-gray-600 font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
             Accueil
           </Link>
-          <Link href="/proprietes" className="text-gray-600 font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
+          <Link href="/property" className="text-gray-600 font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
             Propriétés
           </Link>
           <Link href="/a-propos" className="text-gray-600 font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
@@ -63,12 +63,6 @@ export function Navigation() {
           <Link href="/contact" className="text-gray-600 font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
             Contact
           </Link>
-          <div className="flex flex-col space-y-2">
-            <Button variant="outline" className="w-full">
-              Connexion
-            </Button>
-            <Button className="w-full bg-black opacity-80 text-white">Inscription</Button>
-          </div>
         </div>
       )}
     </nav>

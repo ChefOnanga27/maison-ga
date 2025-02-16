@@ -1,77 +1,42 @@
 "use client";
-
-import { useState } from "react";
-import  Layout  from "@/app/components/layout";
-import { PropertyCard } from "@/app/components/property-card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Input } from "@/app/components/ui/input";
+import { PropertyCard } from "@/app/components/property-card";
 
-const allProperties = [
-    {
-      id: "1",
-      title: "Villa de luxe à Libreville",
-      type: "Maison",
-      price: 250000000,
-      location: "Libreville",
-      description: "Villa spacieuse et moderne offrant des vues exceptionnelles à Libreville.",
-      imageUrl: "/places1.jpg",
-    },
-    {
-      id: "2",
-      title: "Appartement moderne au centre-ville",
-      type: "Appartement",
-      price: 150000000,
-      location: "Libreville",
-      description: "Appartement contemporain au cœur du centre-ville avec toutes les commodités.",
-      imageUrl: "/appartement1.jpg",
-    },
-    {
-      id: "3",
-      title: "Bureau spacieux à Franceville",
-      type: "Bureau",
-      price: 500000,
-      location: "Franceville",
-      description: "Bureau spacieux et lumineux idéalement situé à Franceville, parfait pour les professionnels.",
-      imageUrl: "/bureau1.jpg",
-    },
-    {
-      id: "4",
-      title: "Chambre étudiante à Owendo",
-      type: "Chambre",
-      price: 150000,
-      location: "Owendo",
-      description: "Chambre simple et abordable située près des écoles et universités à Owendo.",
-      imageUrl: "/chambre1.avif",
-    },
-    {
-      id: "5",
-      title: "Local commercial à Port-Gentil",
-      type: "Commerce",
-      price: 700000,
-      location: "Port-Gentil",
-      description: "Local commercial spacieux et bien situé à Port-Gentil, idéal pour divers commerces.",
-      imageUrl: "commerce.jpg",
-    },
-    {
-      id: "6",
-      title: "Maison familiale à Oyem",
-      type: "Maison",
-      price: 180000000,
-      location: "Oyem",
-      description: "Maison confortable avec jardin, parfaite pour une famille, située à Oyem.",
-      imageUrl: "/block1.jpg",
-    },
-  ];
-  
+interface Property {
+  id: string;
+  title: string;
+  type: string;
+  price: number;
+  location: string;
+  description: string;
+  imageUrl: string;
+}
 
 export default function PropertiesPage() {
-  const [filteredProperties, setFilteredProperties] = useState(allProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>("");
+
+  // Charger les propriétés au démarrage
+  useEffect(() => {
+    fetch("/api/properties")
+      .then((response) => response.json())
+      .then((data) => {
+        setProperties(data);
+        setFilteredProperties(data);
+      })
+      .catch((error) => console.error("Erreur de récupération des propriétés:", error));
+  }, []);
 
   const handleFilter = () => {
-    let result = allProperties;
+    let result = properties;
 
     if (categoryFilter !== "all") {
       result = result.filter((property) => property.type === categoryFilter);
@@ -88,53 +53,202 @@ export default function PropertiesPage() {
     setFilteredProperties(result);
   };
 
+  const handleModifyProperty = (property: Property) => {
+    setSelectedProperty(property);
+    setIsModalOpen(true);
+  };
+
+  const handleAddProperty = () => {
+    setSelectedProperty(null);
+    setIsModalOpen(true);
+    setImageUrl(""); // Réinitialiser l'image lors de l'ajout
+  };
+
+  const handleSaveProperty = (updatedProperty: Property) => {
+    const method = selectedProperty ? "PUT" : "POST";
+    const url = selectedProperty
+      ? `/api/properties/${selectedProperty.id}`
+      : "/api/properties";
+    
+    fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: updatedProperty.title,
+        description: updatedProperty.description,
+        price: updatedProperty.price,
+        location: updatedProperty.location,
+        imageUrl: updatedProperty.imageUrl,
+        type: updatedProperty.type,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (method === "POST") {
+          setProperties([...properties, data]);
+        } else {
+          setProperties(properties.map((property) =>
+            property.id === data.id ? data : property
+          ));
+        }
+        setFilteredProperties(properties);
+        setIsModalOpen(false);
+      })
+      .catch((error) => console.error("Erreur lors de l'enregistrement de la propriété:", error));
+  };
+
+  const handleDeleteProperty = (id: string) => {
+    fetch(`/api/properties/${id}`, {
+      method: "DELETE",
+    })
+      .then(() => {
+        setProperties(properties.filter((property) => property.id !== id));
+        setFilteredProperties(filteredProperties.filter((property) => property.id !== id));
+      })
+      .catch((error) => console.error("Erreur lors de la suppression de la propriété:", error));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      setImageUrl(URL.createObjectURL(file)); // Afficher l'image téléchargée
+    }
+  };
+
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-semibold text-blue-800 mb-6">Toutes nos propriétés</h1>
-        
-        {/* Filtres et recherche */}
-        <div className="flex items-center space-x-4 mb-8">
-        <Select onValueChange={(value) => setCategoryFilter(value)}>
-  <SelectTrigger>
-    <div className="custom-class">
-      <SelectValue placeholder="Catégorie" />
-    </div>
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all">Toutes</SelectItem>
-    {/* Autres options */}
-  </SelectContent>
-</Select>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Toutes nos propriétés</h1>
 
+      <div className="flex items-center space-x-4 mb-8">
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="flex-grow">
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="cursor-pointer">Toutes</SelectItem>
+          </SelectContent>
+        </Select>
 
-          <Input
-            type="text"
-            placeholder="Rechercher une propriété..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow border border-blue-400 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <Input
+          type="text"
+          placeholder="Rechercher une propriété..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-grow border border-blue-400 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-          <Button
-            onClick={handleFilter}
-            className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md"
-          >
-            Filtrer
-          </Button>
-        </div>
+        <Button
+          onClick={handleFilter}
+          className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md"
+        >
+          Filtrer
+        </Button>
 
-        {/* Propriétés filtrées */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.length > 0 ? (
-            filteredProperties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))
-          ) : (
-            <p className="col-span-full text-center text-gray-600">Aucune propriété trouvée</p>
-          )}
-        </div>
+        <Button
+          onClick={handleAddProperty}
+          className="bg-green-600 text-white hover:bg-green-700 px-6 py-2 rounded-md"
+        >
+          Ajouter
+        </Button>
       </div>
-    </Layout>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProperties.length > 0 ? (
+          filteredProperties.map((property) => (
+            <div key={property.id} className="relative">
+              <PropertyCard {...property} />
+              <Button
+                onClick={() => handleModifyProperty(property)}
+                className="absolute top-2 right-2 bg-blue-600 text-white hover:bg-green-200 p-2 rounded-md"
+              >
+                Modifier
+              </Button>
+              <Button
+                onClick={() => handleDeleteProperty(property.id)}
+                className="absolute top-2 left-2 bg-black text-white hover:bg-green-700 p-2 rounded-md"
+              >
+                Supprimer
+              </Button>
+            </div>
+          ))
+        ) : (
+          <p className="col-span-full text-center text-gray-600">Aucune propriété trouvée</p>
+        )}
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-md w-1/2">
+            <h2 className="text-2xl font-bold mb-4">{selectedProperty ? "Modifier la propriété" : "Ajouter un local"}</h2>
+
+            <Input
+              type="text"
+              placeholder="Titre"
+              defaultValue={selectedProperty?.title || ""}
+              className="w-full mb-4 border border-blue-400 rounded-md px-4 py-2"
+            />
+
+            <Input
+              type="text"
+              placeholder="Description"
+              defaultValue={selectedProperty?.description || ""}
+              className="w-full mb-4 border border-blue-400 rounded-md px-4 py-2"
+            />
+
+            <Input
+              type="number"
+              placeholder="Prix"
+              defaultValue={selectedProperty?.price || ""}
+              className="w-full mb-4 border border-blue-400 rounded-md px-4 py-2"
+            />
+
+            <Input
+              type="text"
+              placeholder="Localisation"
+              defaultValue={selectedProperty?.location || ""}
+              className="w-full mb-4 border border-blue-400 rounded-md px-4 py-2"
+            />
+
+            <Input
+              type="file"
+              onChange={handleImageUpload}
+              className="w-full mb-4 border border-blue-400 rounded-md px-4 py-2"
+            />
+            {imageUrl && (
+              <div className="mb-4">
+                <img src={imageUrl} alt="Aperçu de l'image" className="w-32 h-32 object-cover" />
+              </div>
+            )}
+
+            <div className="flex justify-between mt-4">
+              <Button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-gray-600 text-white hover:bg-gray-700 px-6 py-2 rounded-md"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() =>
+                  handleSaveProperty({
+                    id: selectedProperty ? selectedProperty.id : `${Date.now()}`,
+                    title: selectedProperty?.title || "Nouvelle Propriété",
+                    description: selectedProperty?.description || "Description de la propriété",
+                    price: selectedProperty?.price || 1000000,
+                    location: selectedProperty?.location || "Libreville",
+                    imageUrl: imageUrl || "/places1.jpg",
+                    type: selectedProperty?.type || "Maison",
+                  })
+                }
+                className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md"
+              >
+                {selectedProperty ? "Modifier" : "Ajouter"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

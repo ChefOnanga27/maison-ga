@@ -1,21 +1,21 @@
-"use client"
-
-import { useState } from "react"
-import { Navigation } from "@/app/components/navigation"
-import { Button } from "@/app/components/ui/button"
-import { Input } from "@/app/components/ui/input"
-import { Label } from "@/app/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/app/components/ui/card"
+"use client";
+import React from "react"
+import { useState } from "react";
+import { Navigation } from "@/app/components/navigation";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/app/components/ui/card";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log(isLogin ? "Login" : "Register", { email, password })
-  }
+    e.preventDefault();
+    console.log(isLogin ? "Login" : "Register", { email, password });
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center">
@@ -64,5 +64,5 @@ export default function AuthPage() {
         </Card>
       </main>
     </div>
-  )
+  );
 }
