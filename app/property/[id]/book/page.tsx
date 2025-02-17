@@ -4,7 +4,7 @@ import { Navigation } from "@/app/components/navigation";
 import { Button } from "@/app/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form";
 import { Input } from "@/app/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 interface PageProps {
@@ -34,12 +34,10 @@ const CustomCalendar: React.FC<{
   );
 };
 
-export default async function BookingPage({ params }: PageProps) {
-  // Vérification que `params` est bien un objet et non une promesse
-  const resolvedParams = await params; // Utile si Next.js renvoie une promesse
-  console.log("Params:", resolvedParams); // Vérification dans la console
-
+export default function BookingPage({ params }: PageProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+
   const form = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -48,9 +46,18 @@ export default async function BookingPage({ params }: PageProps) {
     },
   });
 
+  // Utiliser useEffect pour résoudre l'ID
+  useEffect(() => {
+    if (params && params.id) {
+      setResolvedParams(params);
+    }
+  }, [params]);
+
   const onSubmit = (data: FormValues) => {
-    console.log("Form Data:", data);
-    alert(`Demande de rendez-vous envoyée pour le bien ID: ${resolvedParams.id}`);
+    if (resolvedParams) {
+      console.log("Form Data:", data);
+      alert(`Demande de rendez-vous envoyée pour le bien ID: ${resolvedParams.id}`);
+    }
   };
 
   return (
