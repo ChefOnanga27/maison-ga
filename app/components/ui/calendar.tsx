@@ -1,16 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { cn } from "@/app/lib/utils";
 import { buttonVariants } from "@/app/components/ui/button";
-
-interface CalendarProps {
-  mode?: "single" | "multiple" | "range";
-  selected: Date | Date[] | { from: Date; to: Date } | undefined;
-  onSelect: (date: Date | Date[] | { from: Date; to: Date } | undefined) => void;
-  className?: string;
-}
 
 // 🎨 Styles optimisés pour un rendu élégant
 const customClassNames = {
@@ -39,24 +33,114 @@ const customClassNames = {
   day_hidden: "invisible",
 };
 
-export const Calendar: React.FC<CalendarProps> = ({ mode = "single", selected, onSelect, className }) => {
+export const Calendar: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 15); // Autorise uniquement les chiffres (max 15 caractères)
+    setPhone(value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !name || !email || !phone) {
+      setMessage("❌ Veuillez remplir tous les champs !");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          date: selectedDate.toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        setMessage("✅ Rendez-vous enregistré avec succès !");
+        setName("");
+        setEmail("");
+        setPhone("");
+      } else {
+        setMessage("❌ Erreur lors de l'enregistrement.");
+      }
+    } catch (error) {
+      setMessage("❌ Erreur de connexion au serveur.");
+    }
+
+    setLoading(false);
+  };
+
   return (
-    <div className={cn("flex flex-col items-center space-y-4", className)}>
-      <h3 className="text-xl font-semibold text-gray-800">📅 Sélectionnez une date</h3>
-      {selected && (
-        <p className="text-lg font-medium text-gray-700">
-          📌 Date sélectionnée :{" "}
-          <span className="text-blue-600 font-semibold">
-            {Array.isArray(selected)
-              ? selected.map((date) => date.toLocaleDateString()).join(", ")
-              : selected instanceof Date
-              ? selected.toLocaleDateString()
-              : selected.from && selected.to
-              ? `${selected.from.toLocaleDateString()} → ${selected.to.toLocaleDateString()}`
-              : "Aucune"}
-          </span>
-        </p>
-      )}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-800 p-6">
+      <div className="max-w-2xl w-full bg-white shadow-2xl rounded-xl p-8 border border-blue-300">
+        <h2 className="text-2xl font-bold text-blue-700 text-center mb-6">
+          📅 Réservez un rendez-vous
+        </h2>
+
+        {/* Affichage du calendrier avec la date sélectionnée marquée */}
+        <DayPicker
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          showOutsideDays
+          classNames={customClassNames}
+          className="mb-6"
+        />
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <input
+            type="text"
+            placeholder="👤 Votre nom"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="email"
+            placeholder="📧 Votre email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="tel"
+            placeholder="📞 Votre numéro de téléphone"
+            value={phone}
+            onChange={handlePhoneChange}
+            className="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <button
+            type="submit"
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "w-full bg-blue-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 transition duration-300"
+            )}
+            disabled={loading}
+          >
+            {loading ? "⏳ Envoi en cours..." : "✅ Confirmer le rendez-vous"}
+          </button>
+        </form>
+
+        {message && (
+          <p className="mt-6 text-center text-lg font-semibold text-blue-700 animate-fade-in">
+            {message}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
