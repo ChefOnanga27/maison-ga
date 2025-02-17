@@ -17,6 +17,7 @@ interface FormValues {
   date: Date | undefined;
 }
 
+// Composant personnalisé pour la sélection de la date
 const CustomCalendar: React.FC<{
   selected: Date | undefined;
   onSelect: (date: Date | undefined) => void;
@@ -33,15 +34,23 @@ const CustomCalendar: React.FC<{
   );
 };
 
-export default function BookingPage({ params }: PageProps) {
-  console.log("Params:", params); // Vérification de l'ID dans la console
+export default async function BookingPage({ params }: PageProps) {
+  // Vérification que `params` est bien un objet et non une promesse
+  const resolvedParams = await params; // Utile si Next.js renvoie une promesse
+  console.log("Params:", resolvedParams); // Vérification dans la console
 
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const form = useForm<FormValues>();
+  const form = useForm<FormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      date: undefined,
+    },
+  });
 
   const onSubmit = (data: FormValues) => {
     console.log("Form Data:", data);
-    alert(`Demande de rendez-vous envoyée pour le bien ID: ${params.id}`);
+    alert(`Demande de rendez-vous envoyée pour le bien ID: ${resolvedParams.id}`);
   };
 
   return (
