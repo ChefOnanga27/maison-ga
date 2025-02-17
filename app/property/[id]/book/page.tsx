@@ -1,43 +1,48 @@
-"use client"
+"use client";
 
-import { Navigation } from "@/app/components/navigation"
-import { Button } from "@/app/components/ui/button"
-import {Calendar} from "@/app/components/ui/calendar"  
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form"
-import { Input } from "@/app/components/ui/input"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { Navigation } from "@/app/components/navigation";
+import { Button } from "@/app/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form";
+import { Input } from "@/app/components/ui/input";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-interface CalendarProps {
-  mode: string;
+interface PageProps {
+  params: { id: string };
+}
+
+interface FormValues {
+  name: string;
+  email: string;
+  date: Date | undefined;
+}
+
+const CustomCalendar: React.FC<{
   selected: Date | undefined;
   onSelect: (date: Date | undefined) => void;
-  className: string;
-}
-
-const Calendar: React.FC<CalendarProps> = ({ mode, selected, onSelect, className }) => {
-  // Implémentation du composant Calendar
+}> = ({ selected, onSelect }) => {
   return (
-    <div className={className}>
-      {/* Votre logique d'affichage du calendrier ici */}
+    <div>
       <input
         type="date"
-        value={selected?.toISOString().split("T")[0]}
+        value={selected ? selected.toISOString().split("T")[0] : ""}
         onChange={(e) => onSelect(new Date(e.target.value))}
+        className="p-2 border rounded-md w-full"
       />
     </div>
-  )
-}
+  );
+};
 
-export default function BookingPage({ params }: { params: { id: string } }) {
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const form = useForm()
+export default function BookingPage({ params }: PageProps) {
+  console.log("Params:", params); // Vérification de l'ID dans la console
 
-  const onSubmit = (data: any) => {
-    console.log(data)
-    // Ici, vous enverriez les données à votre backend
-    alert("Demande de rendez-vous envoyée !")
-  }
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const form = useForm<FormValues>();
+
+  const onSubmit = (data: FormValues) => {
+    console.log("Form Data:", data);
+    alert(`Demande de rendez-vous envoyée pour le bien ID: ${params.id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -47,6 +52,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
         <div className="bg-white shadow-xl rounded-lg overflow-hidden p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* Champ pour le nom */}
               <FormField
                 control={form.control}
                 name="name"
@@ -60,6 +66,8 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                   </FormItem>
                 )}
               />
+
+              {/* Champ pour l'email */}
               <FormField
                 control={form.control}
                 name="email"
@@ -67,29 +75,30 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="votre@email.com" {...field} />
+                      <Input type="email" placeholder="votre@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date de visite</FormLabel>
-                    <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
-                    <FormDescription>Choisissez la date à laquelle vous souhaitez visiter le bien.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Envoyer la demande</Button>
+
+              {/* Champ pour la sélection de la date */}
+              <FormItem>
+                <FormLabel>Date du rendez-vous</FormLabel>
+                <FormControl>
+                  <CustomCalendar selected={date} onSelect={setDate} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+
+              {/* Bouton d'envoi */}
+              <Button type="submit" className="w-full py-3 text-lg">
+                Envoyer la demande
+              </Button>
             </form>
           </Form>
         </div>
       </main>
     </div>
-  )
+  );
 }
